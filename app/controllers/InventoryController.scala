@@ -12,7 +12,7 @@ import models.Product
 
 trait Inventoryable {
   def products: Future[List[Product]]
-  def productByName(name: String): Future[Option[Product]]
+  def productByLabel(label: String): Future[Option[Product]]
   def addProduct(
     productLabel: String,
     productPrice: Double): Future[Int]
@@ -34,11 +34,11 @@ class InventoryController @Inject()(
     inventoryService.products.map(products => Ok(Json.toJson(products)))
   }
 
-  def product(name: String) = Action.async {
-    inventoryService.productByName(name)
+  def product(label: String) = Action.async {
+    inventoryService.productByLabel(label)
       .map(_
         .map(product => Ok(Json.toJson(product)))
-        .getOrElse(NotFound(s"Product not found: $name")))
+        .getOrElse(NotFound(s"Product not found: $label")))
   }
 
   def addProduct = Action.async(parse.json) { request =>
