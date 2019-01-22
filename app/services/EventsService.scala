@@ -60,22 +60,29 @@ class EventsService @Inject()(
         .getOrElse(0))
       .flatMap(newId =>
         addEvent(ProductAdded(Product(newId, label, price)))
-          .map(_ => newId))
+          .map(_ => {
+            prettyPrint
+            newId
+          }))
 
   def deleteProduct(id: Int): Future[List[Product]] =
     eventsHandlerService.inventory(events)
       .map(_.filter(_.id == id))
       .flatMap(toBeDeleted =>
         addEvent(ProductDeleted(id))
-          .map(_ => toBeDeleted))
+          .map(_ => {
+            prettyPrint
+            toBeDeleted
+          }))
 
   private def updateById(
     id: Int,
     event: ProductEvent): Future[Option[Product]] =
     addEvent(event)
-      .flatMap(_ =>
+      .flatMap(_ => {
+        prettyPrint
         eventsHandlerService.inventory(events)
-          .map(_.find(_.id == id)))
+          .map(_.find(_.id == id))})
 
   def updateLabel(id: Int, label: String): Future[Option[Product]] =
     updateById(id, ProductLabelUpdated(id, label))
