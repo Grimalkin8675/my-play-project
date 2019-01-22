@@ -30,15 +30,12 @@ class DummyInventoryService @Inject()()(
     inventory.find(_.label == label)
   }
 
-  def addProduct(
-    productLabel: String,
-    productPrice: Double): Future[Int] = Future {
-
+  def addProduct(label: String, price: Double): Future[Int] = Future {
     val newId: Int = inventory
       .lastOption
       .map(_.id + 1)
       .getOrElse(0)
-    inventory :+= Product(newId, productLabel, productPrice)
+    inventory :+= Product(newId, label, price)
     prettyPrint
     newId
   }

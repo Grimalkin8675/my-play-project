@@ -13,9 +13,7 @@ import models.Product
 trait Inventoryable {
   def products: Future[List[Product]]
   def productByLabel(label: String): Future[Option[Product]]
-  def addProduct(
-    productLabel: String,
-    productPrice: Double): Future[Int]
+  def addProduct(label: String, price: Double): Future[Int]
   def deleteProduct(id: Int): Future[List[Product]]
   def updateLabel(id: Int, label: String): Future[Option[Product]]
   def updatePrice(id: Int, price: Double): Future[Option[Product]]

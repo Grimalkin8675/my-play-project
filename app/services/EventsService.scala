@@ -14,21 +14,9 @@ case class ProductAdded(product: Product) extends ProductEvent
 
 case class ProductDeleted(id: Int) extends ProductEvent
 
-sealed class ProductUpdated(
-  id: Int,
-  update: Product => Product) extends ProductEvent
+case class ProductLabelUpdated(id: Int, newLabel: String) extends ProductEvent
 
-case class ProductLabelUpdated(
-  id: Int,
-  newLabel: String) extends ProductUpdated(
-  id,
-  old => Product(old.id, newLabel, old.price))
-
-case class ProductPriceUpdated(
-  id: Int,
-  newPrice: Double) extends ProductUpdated(
-  id,
-  old => Product(old.id, old.label, newPrice))
+case class ProductPriceUpdated(id: Int, newPrice: Double) extends ProductEvent
 
 
 trait EventsHandlerService {
@@ -64,9 +52,17 @@ class EventsService @Inject()(
     eventsHandlerService.inventory(events)
       .map(_.find(_.label == label))
 
-  def addProduct(
-    productLabel: String,
-    productPrice: Double): Future[Int] = ???
+  def addProduct(label: String, price: Double): Future[Int] =
+    eventsHandlerService.inventory(events)
+      .map(_
+        .lastOption
+        .map(_.id + 1)
+        .getOrElse(0))
+      .flatMap(newId =>
+        addEvent(ProductAdded(Product(newId, label, price)))
+          .map(_ => newId))
+
+
   def deleteProduct(id: Int): Future[List[Product]] = ???
   def updateLabel(id: Int, label: String): Future[Option[Product]] = ???
   def updatePrice(id: Int, price: Double): Future[Option[Product]] = ???
