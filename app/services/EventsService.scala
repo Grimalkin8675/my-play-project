@@ -5,7 +5,7 @@ import scala.concurrent._
 import scala.util._
 
 import models.Product
-import controllers.Inventoryable
+import controllers.{WriteService, ReadService}
 
 
 sealed trait ProductEvent
@@ -19,23 +19,22 @@ case class ProductLabelUpdated(id: Int, newLabel: String) extends ProductEvent
 case class ProductPriceUpdated(id: Int, newPrice: Double) extends ProductEvent
 
 
-trait EventsHandlerService {
-  def inventory(events: List[ProductEvent]): Future[List[Product]]
+trait Publishable {
+  def publish(event: ProductEvent): Unit
 }
 
 class EventsService @Inject()(
-    eventsHandlerService: EventsHandlerService
-  )(
-    implicit ec: ExecutionContext
-  ) extends Inventoryable {
+  readService: ReadService,
+  eventBus: Publishable
+)(
+  implicit ec: ExecutionContext
+) extends WriteService {
 
-  var events: List[ProductEvent] = List(
-    ProductAdded(Product(0, "foo", 123.4)),
-    ProductAdded(Product(1, "bar", 56.78))
-  )
+  var events: List[ProductEvent] = List.empty[ProductEvent]
 
   private def addEvent(event: ProductEvent): Future[Unit] = Future {
     events :+= event
+    eventBus.publish(event)
   }
 
   private def prettyPrint = {
@@ -46,14 +45,8 @@ class EventsService @Inject()(
     println(s"events = $res\n")
   }
 
-  def products: Future[List[Product]] = eventsHandlerService.inventory(events)
-
-  def productByLabel(label: String): Future[Option[Product]] =
-    eventsHandlerService.inventory(events)
-      .map(_.find(_.label == label))
-
   def addProduct(label: String, price: Double): Future[Int] =
-    eventsHandlerService.inventory(events)
+    readService.products
       .map(_
         .lastOption
         .map(_.id + 1)
@@ -66,7 +59,7 @@ class EventsService @Inject()(
           }))
 
   def deleteProduct(id: Int): Future[List[Product]] =
-    eventsHandlerService.inventory(events)
+    readService.products
       .map(_.filter(_.id == id))
       .flatMap(toBeDeleted =>
         addEvent(ProductDeleted(id))
@@ -81,7 +74,7 @@ class EventsService @Inject()(
     addEvent(event)
       .flatMap(_ => {
         prettyPrint
-        eventsHandlerService.inventory(events)
+        readService.products
           .map(_.find(_.id == id))})
 
   def updateLabel(id: Int, label: String): Future[Option[Product]] =

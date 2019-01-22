@@ -3,18 +3,23 @@ package modules
 import play.api.{Environment, Configuration}
 import play.api.inject.Module
 
-import controllers.Inventoryable
+import controllers.{WriteService, ReadService}
 import services.{
   DummyInventoryService,
   EventsService,
-  EventsHandlerService,
-  FirstEventsHandler}
+  ProductsProjection,
+  EventBus,
+  Publishable,
+  Subscribable}
 
 
 class ServicesModule extends Module {
   def bindings(env: Environment, conf: Configuration) = Seq(
-    // bind[Inventoryable].to[DummyInventoryService],
-    bind[Inventoryable].to[EventsService],
-    bind[EventsHandlerService].to[FirstEventsHandler]
+    // bind[WriteService].to[DummyInventoryService],
+    // bind[ReadService].to[DummyInventoryService],
+    bind[WriteService].to[EventsService],
+    bind[ReadService].to[ProductsProjection],
+    bind[Publishable].to[EventBus],
+    bind[Subscribable].to[EventBus]
   )
 }

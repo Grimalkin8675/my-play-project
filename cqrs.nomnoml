@@ -1,0 +1,54 @@
+[<abstract> trait WriteService
+  | def addProduct(label: String, price: Double): Future<Int>]
+
+[InventoryController
+  | readService: ReadService
+    writeService: WriteService
+  | def products: Action
+    def addProduct: Action]
+
+[<abstract> trait ReadService
+   | def products: Future<List<Product>>]
+
+[EventsService
+  | readService: ReadService
+    eventBus: Publishable
+    var events: List<ProductEvent>
+  | private def addEvent(event: ProductEvent): Future<Unit>]
+
+[EventsService] -- [<note> . addEvent(event: ProductEvent): Future<Unit> = Future {
+.   ??? // add to DB
+.   eventBus.publish(event)
+. }]
+
+[<abstract> trait Publishable
+  | def publish(event: ProductEvent): Unit]
+
+[<abstract> trait Subscribable
+  | def subscribe(eventHandler: EventHandler): Unit]
+
+[EventBus
+  | var subscribers: List<EventHandler>
+  | def publish(event: ProductEvent): Unit
+    def subscribe(eventHandler: EventHandler): Unit]
+
+[<abstract> trait EventHandler
+  | def handleEvent(event: ProductEvent): Unit]
+
+[ProductsProjection
+  | eventBus: Subscribable
+    var products: List<Product>
+  | def handleEvent(event: ProductEvent): Unit]
+
+
+[InventoryController] <-- [EventsService]
+[InventoryController] <-- [ProductsProjection]
+[EventsService] <-- [EventBus]
+[ProductsProjection] <-- [EventBus]
+[ProductsProjection] --> [EventsService]
+
+[trait WriteService] <:-- [EventsService]
+[trait ReadService] <:-- [ProductsProjection]
+[trait EventHandler] <:-- [ProductsProjection]
+[trait Publishable] <:-- [EventBus]
+[trait Subscribable] <:-- [EventBus]

@@ -10,9 +10,12 @@ import play.api.libs.json._
 import models.Product
 
 
-trait Inventoryable {
+trait ReadService {
   def products: Future[List[Product]]
   def productByLabel(label: String): Future[Option[Product]]
+}
+
+trait WriteService {
   def addProduct(label: String, price: Double): Future[Int]
   def deleteProduct(id: Int): Future[List[Product]]
   def updateLabel(id: Int, label: String): Future[Option[Product]]
@@ -22,18 +25,19 @@ trait Inventoryable {
 
 @Singleton
 class InventoryController @Inject()(
-    inventoryService: Inventoryable,
-    cc: ControllerComponents
-  )(
-    implicit ec: ExecutionContext
-  ) extends AbstractController(cc) {
+  readService: ReadService,
+  writeService: WriteService,
+  cc: ControllerComponents
+)(
+  implicit ec: ExecutionContext
+) extends AbstractController(cc) {
 
   def products = Action.async {
-    inventoryService.products.map(products => Ok(Json.toJson(products)))
+    readService.products.map(products => Ok(Json.toJson(products)))
   }
 
   def product(label: String) = Action.async {
-    inventoryService.productByLabel(label)
+    readService.productByLabel(label)
       .map(_
         .map(product => Ok(Json.toJson(product)))
         .getOrElse(NotFound(s"Product not found: $label")))
@@ -43,20 +47,20 @@ class InventoryController @Inject()(
     (for {
       label <- (request.body \ "label").validate[String].asOpt
       price <- (request.body \ "price").validate[Double].asOpt
-    } yield inventoryService.addProduct(label, price))
-      .map(_.map(id => Ok(Json.toJson(id))))
+    } yield writeService.addProduct(label, price))
+      .map(_.map(id => Ok(Json.obj("id" -> id))))
       .getOrElse(Future { BadRequest("Invalid Product.") })
   }
 
   def deleteProduct(id: Int) = Action.async {
-    inventoryService.deleteProduct(id)
+    writeService.deleteProduct(id)
       .map(product => Ok(Json.toJson(product)))
   }
 
   def updateLabel(id: Int) = Action.async(parse.json) { request =>
     request.body.validate[String].asOpt
       .map(label =>
-        inventoryService
+        writeService
           .updateLabel(id, label)
           .map(_
             .map(product => Ok(Json.toJson(product)))
@@ -67,7 +71,7 @@ class InventoryController @Inject()(
   def updatePrice(id: Int) = Action.async(parse.json) { request =>
     request.body.validate[Double].asOpt
       .map(price =>
-        inventoryService
+        writeService
           .updatePrice(id, price)
           .map(_
             .map(product => Ok(Json.toJson(product)))
