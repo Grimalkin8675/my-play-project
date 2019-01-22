@@ -69,6 +69,17 @@ class EventsService @Inject()(
         addEvent(ProductDeleted(id))
           .map(_ => toBeDeleted))
 
-  def updateLabel(id: Int, label: String): Future[Option[Product]] = ???
-  def updatePrice(id: Int, price: Double): Future[Option[Product]] = ???
+  private def updateById(
+    id: Int,
+    event: ProductEvent): Future[Option[Product]] =
+    addEvent(event)
+      .flatMap(_ =>
+        eventsHandlerService.inventory(events)
+          .map(_.find(_.id == id)))
+
+  def updateLabel(id: Int, label: String): Future[Option[Product]] =
+    updateById(id, ProductLabelUpdated(id, label))
+
+  def updatePrice(id: Int, price: Double): Future[Option[Product]] =
+    updateById(id, ProductPriceUpdated(id, price))
 }
