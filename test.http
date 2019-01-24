@@ -2,6 +2,16 @@ GET /products HTTP/1.1
 Host: localhost:9000
 
 ###
+POST /product HTTP/1.1
+Host: localhost:9000
+Content-Type: application/json
+
+{
+    "label": "foo",
+    "price": 12.3
+}
+
+###
 GET /product/foo HTTP/1.1
 Host: localhost:9000
 
@@ -11,12 +21,20 @@ Host: localhost:9000
 Content-Type: application/json
 
 {
-    "label": "newProduct",
-    "price": 7.89
+    "label": "bar",
+    "price": 4.56
 }
 
 ###
+GET /products HTTP/1.1
+Host: localhost:9000
+
+###
 DELETE /product/0 HTTP/1.1
+Host: localhost:9000
+
+###
+GET /products HTTP/1.1
 Host: localhost:9000
 
 ###
@@ -24,11 +42,23 @@ PUT /product/1/label
 Host: localhost:9000
 Content-Type: application/json
 
-"newLabel"
+{
+    "label": "bar changed"
+}
 
 ###
-PUT /product/2/price
+GET /products HTTP/1.1
+Host: localhost:9000
+
+###
+PUT /product/1/price
 Host: localhost:9000
 Content-Type: application/json
 
--123
+{
+    "price": -123
+}
+
+###
+GET /products HTTP/1.1
+Host: localhost:9000

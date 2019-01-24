@@ -4,19 +4,8 @@ import javax.inject._
 import scala.concurrent._
 import scala.util._
 
-import models.Product
+import models._
 import controllers.{WriteService, ReadService}
-
-
-sealed trait ProductEvent
-
-case class ProductAdded(product: Product) extends ProductEvent
-
-case class ProductDeleted(id: Int) extends ProductEvent
-
-case class ProductLabelUpdated(id: Int, newLabel: String) extends ProductEvent
-
-case class ProductPriceUpdated(id: Int, newPrice: Double) extends ProductEvent
 
 
 trait Publishable {
@@ -53,29 +42,42 @@ class EventsService @Inject()(
         .getOrElse(0))
       .flatMap(newId =>
         addEvent(ProductAdded(Product(newId, label, price)))
-          .map(_ => {
+          .map { _ =>
             prettyPrint
             newId
-          }))
+          })
 
   def deleteProduct(id: Int): Future[List[Product]] =
-    readService.products
-      .map(_.filter(_.id == id))
-      .flatMap(toBeDeleted =>
-        addEvent(ProductDeleted(id))
-          .map(_ => {
-            prettyPrint
-            toBeDeleted
-          }))
+    readService.products.map(_.filter(_.id == id))
+      .flatMap {
+        case toBeDeleted if toBeDeleted.size != 0 =>
+          addEvent(ProductDeleted(id))
+            .map { _ =>
+              prettyPrint
+              toBeDeleted
+            }
+        case _ => Future {
+          prettyPrint
+          List.empty[Product]
+        }
+      }
 
   private def updateById(
     id: Int,
     event: ProductEvent): Future[Option[Product]] =
-    addEvent(event)
-      .flatMap(_ => {
-        prettyPrint
-        readService.products
-          .map(_.find(_.id == id))})
+    readService.products.map(_.find(_.id == id))
+      .flatMap {
+        case Some(_) =>
+          addEvent(event)
+            .flatMap { _ =>
+              prettyPrint
+              readService.products.map(_.find(_.id == id))
+            }
+        case None => Future {
+          prettyPrint
+          None
+        }
+      }
 
   def updateLabel(id: Int, label: String): Future[Option[Product]] =
     updateById(id, ProductLabelUpdated(id, label))

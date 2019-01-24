@@ -54,11 +54,13 @@ class InventoryController @Inject()(
 
   def deleteProduct(id: Int) = Action.async {
     writeService.deleteProduct(id)
-      .map(product => Ok(Json.toJson(product)))
+      .map(products =>
+        if (products.size != 0) Ok(Json.toJson(products))
+        else BadRequest(s"Product with id: $id"))
   }
 
   def updateLabel(id: Int) = Action.async(parse.json) { request =>
-    request.body.validate[String].asOpt
+    (request.body \ "label").validate[String].asOpt
       .map(label =>
         writeService
           .updateLabel(id, label)
@@ -69,7 +71,7 @@ class InventoryController @Inject()(
   }
 
   def updatePrice(id: Int) = Action.async(parse.json) { request =>
-    request.body.validate[Double].asOpt
+     (request.body \ "price").validate[Double].asOpt
       .map(price =>
         writeService
           .updatePrice(id, price)

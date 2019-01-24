@@ -2,6 +2,8 @@ package services
 
 import javax.inject._
 
+import models._
+
 
 trait EventHandler {
   def handleEvent(event: ProductEvent): Unit

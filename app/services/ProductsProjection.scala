@@ -4,7 +4,7 @@ import javax.inject._
 import scala.concurrent._
 import scala.annotation.tailrec
 
-import models.Product
+import models._
 import controllers.ReadService
 
 
