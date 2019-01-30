@@ -14,9 +14,9 @@ import models.Product
 
 class InventoryControllerSpec extends PlaySpec with MockFactory {
 
-  "InventoryController GET" should {
+  "InventoryController.products" should {
 
-    "return the products" in {
+    "return a list of products" in {
       val stubQueryHandler = stub[QueryHandler]
       (stubQueryHandler.products _) when() returns(Future {
         List(Product(0, "foo", 12)) })
@@ -38,6 +38,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
           "label" -> "foo",
           "price" -> 12))
     }
+
   }
 
 }
