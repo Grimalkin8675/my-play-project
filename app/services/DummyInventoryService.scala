@@ -5,12 +5,12 @@ import scala.concurrent._
 import scala.util._
 
 import models.Product
-import controllers.{ReadService, WriteService}
+import controllers.{QueryHandler, WriteService}
 
 
 class DummyInventoryService @Inject()()(
   implicit ec: ExecutionContext
-) extends ReadService with WriteService {
+) extends QueryHandler with WriteService {
 
   var inventory: List[Product] = List(
     Product(0, "foo", 123.4),

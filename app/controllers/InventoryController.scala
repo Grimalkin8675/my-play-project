@@ -10,7 +10,7 @@ import play.api.libs.json._
 import models.Product
 
 
-trait ReadService {
+trait QueryHandler {
   def products: Future[List[Product]]
   def productByLabel(label: String): Future[Option[Product]]
 }
@@ -25,7 +25,7 @@ trait WriteService {
 
 @Singleton
 class InventoryController @Inject()(
-  readService: ReadService,
+  queryHandler: QueryHandler,
   writeService: WriteService,
   cc: ControllerComponents
 )(
@@ -33,11 +33,11 @@ class InventoryController @Inject()(
 ) extends AbstractController(cc) {
 
   def products = Action.async {
-    readService.products.map(products => Ok(Json.toJson(products)))
+    queryHandler.products.map(products => Ok(Json.toJson(products)))
   }
 
   def product(label: String) = Action.async {
-    readService.productByLabel(label)
+    queryHandler.productByLabel(label)
       .map(_
         .map(product => Ok(Json.toJson(product)))
         .getOrElse(NotFound(s"Product not found: $label")))

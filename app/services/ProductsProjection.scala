@@ -5,7 +5,7 @@ import scala.concurrent._
 import scala.annotation.tailrec
 
 import models._
-import controllers.ReadService
+import controllers.QueryHandler
 
 
 trait Subscribable {
@@ -17,7 +17,7 @@ class ProductsProjection @Inject()(
   eventBus: Subscribable
 )(
   implicit ec: ExecutionContext
-) extends ReadService with EventHandler {
+) extends QueryHandler with EventHandler {
 
   eventBus.subscribe(this)
 

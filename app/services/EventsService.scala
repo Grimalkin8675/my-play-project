@@ -5,7 +5,7 @@ import scala.concurrent._
 import scala.util._
 
 import models._
-import controllers.{WriteService, ReadService}
+import controllers.{WriteService, QueryHandler}
 
 
 trait Publishable {
@@ -13,7 +13,7 @@ trait Publishable {
 }
 
 class EventsService @Inject()(
-  readService: ReadService,
+  queryHandler: QueryHandler,
   eventBus: Publishable
 )(
   implicit ec: ExecutionContext
@@ -35,7 +35,7 @@ class EventsService @Inject()(
   }
 
   def addProduct(label: String, price: Double): Future[Int] =
-    readService.products
+    queryHandler.products
       .map(_
         .lastOption
         .map(_.id + 1)
@@ -48,7 +48,7 @@ class EventsService @Inject()(
           })
 
   def deleteProduct(id: Int): Future[List[Product]] =
-    readService.products.map(_.filter(_.id == id))
+    queryHandler.products.map(_.filter(_.id == id))
       .flatMap {
         case toBeDeleted if toBeDeleted.size != 0 =>
           addEvent(ProductDeleted(id))
@@ -65,13 +65,13 @@ class EventsService @Inject()(
   private def updateById(
     id: Int,
     event: ProductEvent): Future[Option[Product]] =
-    readService.products.map(_.find(_.id == id))
+    queryHandler.products.map(_.find(_.id == id))
       .flatMap {
         case Some(_) =>
           addEvent(event)
             .flatMap { _ =>
               prettyPrint
-              readService.products.map(_.find(_.id == id))
+              queryHandler.products.map(_.find(_.id == id))
             }
         case None => Future {
           prettyPrint
