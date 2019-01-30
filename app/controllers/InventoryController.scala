@@ -12,12 +12,13 @@ import models.Product
 
 trait QueryHandler {
   def products: Future[List[Product]]
+  def productById(id: Int): Future[Option[Product]]
   def productByLabel(label: String): Future[Option[Product]]
 }
 
 trait WriteService {
-  def addProduct(label: String, price: Double): Future[Int]
-  def deleteProduct(id: Int): Future[List[Product]]
+  def addProduct(label: String, price: Double): Future[Product]
+  def deleteProduct(id: Int): Future[Option[Product]]
   def updateLabel(id: Int, label: String): Future[Option[Product]]
   def updatePrice(id: Int, price: Double): Future[Option[Product]]
 }
@@ -54,9 +55,9 @@ class InventoryController @Inject()(
 
   def deleteProduct(id: Int) = Action.async {
     writeService.deleteProduct(id)
-      .map(products =>
-        if (products.size != 0) Ok(Json.toJson(products))
-        else BadRequest(s"Product with id: $id"))
+      .map(_
+        .map(product => Ok(Json.toJson(product)))
+        .getOrElse(BadRequest(s"Product with id: $id")))
   }
 
   def updateLabel(id: Int) = Action.async(parse.json) { request =>

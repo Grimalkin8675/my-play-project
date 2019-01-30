@@ -27,25 +27,36 @@ class DummyInventoryService @Inject()()(
 
   def products: Future[List[Product]] = Future { inventory }
 
+  def productById(id: Int): Future[Option[Product]] = Future {
+    inventory.find(_.id == id)
+  }
+
   def productByLabel(label: String): Future[Option[Product]] = Future {
     inventory.find(_.label == label)
   }
 
-  def addProduct(label: String, price: Double): Future[Int] = Future {
+  def addProduct(label: String, price: Double): Future[Product] = Future {
     val newId: Int = inventory
       .lastOption
       .map(_.id + 1)
       .getOrElse(0)
-    inventory :+= Product(newId, label, price)
+    val newProduct = Product(newId, label, price)
+    inventory :+= newProduct
     prettyPrint
-    newId
+    newProduct
   }
 
-  def deleteProduct(id: Int): Future[List[Product]] = Future {
-    val (productsHavingId, newInventory) = inventory.partition(_.id == id)
-    inventory = newInventory
-    prettyPrint
-    productsHavingId
+  def deleteProduct(id: Int): Future[Option[Product]] = Future {
+    val i = inventory.indexWhere(_.id == id)
+    if (i == -1) None
+    else inventory.splitAt(i) match {
+      case (before, toBeDeleted :: after) => {
+        inventory = before ::: after
+        prettyPrint
+        Some(toBeDeleted)
+      }
+      case _ => None
+    }
   }
 
   private def updateById(

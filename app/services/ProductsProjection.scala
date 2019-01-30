@@ -25,6 +25,10 @@ class ProductsProjection @Inject()(
 
   def products: Future[List[Product]] = Future { inventory }
 
+  def productById(id: Int): Future[Option[Product]] = Future {
+    inventory.find(_.id == id)
+  }
+
   def productByLabel(label: String): Future[Option[Product]] = Future {
     inventory.find(_.label == label)
   }

@@ -34,32 +34,29 @@ class EventsService @Inject()(
     println(s"events = $res\n")
   }
 
-  def addProduct(label: String, price: Double): Future[Int] =
+  def addProduct(label: String, price: Double): Future[Product] =
     queryHandler.products
       .map(_
         .lastOption
         .map(_.id + 1)
         .getOrElse(0))
-      .flatMap(newId =>
-        addEvent(ProductAdded(Product(newId, label, price)))
+      .flatMap { newId =>
+        val newProduct = Product(newId, label, price)
+        addEvent(ProductAdded(newProduct))
           .map { _ =>
             prettyPrint
-            newId
-          })
+            newProduct
+          }}
 
-  def deleteProduct(id: Int): Future[List[Product]] =
-    queryHandler.products.map(_.filter(_.id == id))
-      .flatMap {
-        case toBeDeleted if toBeDeleted.size != 0 =>
-          addEvent(ProductDeleted(id))
-            .map { _ =>
-              prettyPrint
-              toBeDeleted
-            }
-        case _ => Future {
-          prettyPrint
-          List.empty[Product]
-        }
+  def deleteProduct(id: Int): Future[Option[Product]] =
+    queryHandler.productById(id)
+      .map { maybeProduct =>
+        prettyPrint
+        maybeProduct
+          .map { product =>
+            addEvent(ProductDeleted(id))
+            product
+          }
       }
 
   private def updateById(
