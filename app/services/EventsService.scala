@@ -26,55 +26,37 @@ class EventsService @Inject()(
     eventBus.publish(event)
   }
 
-  private def prettyPrint = {
-    val pretty: String = events
-      .map(product => s"  $product")
-      .mkString(",\n")
-    val res = if (events.size == 0) "[]" else s"[\n$pretty\n]"
-    println(s"events = $res\n")
-  }
+  private def productById(id: Int): Future[Option[Product]] =
+    queryHandler.products.map(_.find(_.id == id))
+
+  def nextId: Future[Int] =
+    queryHandler.products.map(_
+      .lastOption
+      .map(_.id + 1)
+      .getOrElse(0))
 
   def addProduct(label: String, price: Double): Future[Product] =
-    queryHandler.products
-      .map(_
-        .lastOption
-        .map(_.id + 1)
-        .getOrElse(0))
-      .flatMap { newId =>
-        val newProduct = Product(newId, label, price)
-        addEvent(ProductAdded(newProduct))
-          .map { _ =>
-            prettyPrint
-            newProduct
-          }}
+    nextId.flatMap { newId =>
+      val newProduct = Product(newId, label, price)
+      addEvent(ProductAdded(newProduct))
+        .map(_ => newProduct)
+    }
 
   def deleteProduct(id: Int): Future[Option[Product]] =
-    queryHandler.productById(id)
-      .map { maybeProduct =>
-        prettyPrint
-        maybeProduct
-          .map { product =>
-            addEvent(ProductDeleted(id))
-            product
-          }
-      }
+    productById(id).flatMap(_
+      .map(product =>
+        addEvent(ProductDeleted(id))
+          .map(_ => Some(product)))
+      .getOrElse(Future(None)))
 
-  private def updateById(
+  def updateById(
     id: Int,
     event: ProductEvent): Future[Option[Product]] =
-    queryHandler.products.map(_.find(_.id == id))
-      .flatMap {
-        case Some(_) =>
-          addEvent(event)
-            .flatMap { _ =>
-              prettyPrint
-              queryHandler.products.map(_.find(_.id == id))
-            }
-        case None => Future {
-          prettyPrint
-          None
-        }
-      }
+    productById(id).flatMap(_
+      .map(_ =>
+        addEvent(event)
+          .flatMap(_ => productById(id)))
+      .getOrElse(Future(None)))
 
   def updateLabel(id: Int, label: String): Future[Option[Product]] =
     updateById(id, ProductLabelUpdated(id, label))

@@ -12,7 +12,6 @@ import models.Product
 
 trait QueryHandler {
   def products: Future[List[Product]]
-  def productById(id: Int): Future[Option[Product]]
   def productByLabel(label: String): Future[Option[Product]]
 }
 
