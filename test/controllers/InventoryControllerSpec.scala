@@ -28,7 +28,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
 
   "InventoryController.products" should {
 
-    "return a list of products" in {
+    "return OK for GET /products" in {
       val stubQueryHandler = stub[QueryHandler]
       (stubQueryHandler.products _)
         .when() returns(Future { List(Product(0, "foo", 12.3)) })
@@ -45,6 +45,10 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
             "label" -> "foo",
             "price" -> 12.3))
     }
+
+  }
+
+  "InventoryController.product(label)" should {
 
     "return OK for GET /product/:label if product exists" in {
       val stubQueryHandler = stub[QueryHandler]
@@ -74,6 +78,10 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       contentType(result) mustBe Some("text/plain")
       contentAsString(result) mustBe "Product not found: bar"
     }
+
+  }
+
+  "InventoryController.addProduct" should {
 
     "return CREATED for POST /product if product is correctly formated" in {
       val stubWriteService = stub[WriteService]
@@ -109,6 +117,10 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       contentAsString(result) mustBe "Invalid product"
     }
 
+  }
+
+  "InventoryController.deleteProduct(id)" should {
+
     "return OK for DELETE /product/:id if product exists" in {
       val stubWriteService = stub[WriteService]
       (stubWriteService.deleteProduct _)
@@ -137,6 +149,10 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       contentType(result) mustBe Some("text/plain")
       contentAsString(result) mustBe "No product with id: 21"
     }
+
+  }
+
+  "InventoryController.updateLabel(id)" should {
 
     "return OK for PUT /product/:id/label if label is correctly formated and product exists" in {
       val stubWriteService = stub[WriteService]
@@ -182,6 +198,10 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       contentType(result) mustBe Some("text/plain")
       contentAsString(result) mustBe "Invalid label"
     }
+
+  }
+
+  "InventoryController.updatePrice(id)" should {
 
     "return OK for PUT /product/:id/price if price is correctly formated and product exists" in {
       val stubWriteService = stub[WriteService]
