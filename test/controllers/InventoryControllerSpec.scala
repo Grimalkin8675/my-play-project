@@ -31,7 +31,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
     "return OK for GET /products" in {
       val stubQueryHandler = stub[QueryHandler]
       (stubQueryHandler.products _)
-        .when() returns(Future { List(Product(0, "foo", 12.3)) })
+        .when () returns Future(List(Product(0, "foo", 12.3)))
       val app = fakeApplication(stubQueryHandler)
 
       val result = route(app, FakeRequest(GET, "/products")).get
@@ -53,7 +53,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
     "return OK for GET /product/:label if product exists" in {
       val stubQueryHandler = stub[QueryHandler]
       (stubQueryHandler.productByLabel _)
-        .when("bar") returns(Future { Some(Product(1, "bar", 1.23)) })
+        .when ("bar") returns Future(Some(Product(1, "bar", 1.23)))
       val app = fakeApplication(stubQueryHandler)
 
       val result = route(app, FakeRequest(GET, "/product/bar")).get
@@ -69,7 +69,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
 
     "return NOT_FOUND for GET /product/:label if products doesn't exist" in {
       val stubQueryHandler = stub[QueryHandler]
-      (stubQueryHandler.productByLabel _) when("bar") returns(Future { None })
+      stubQueryHandler.productByLabel _ when "bar" returns Future(None)
       val app = fakeApplication(stubQueryHandler)
 
       val result = route(app, FakeRequest(GET, "/product/bar")).get
@@ -86,7 +86,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
     "return CREATED for POST /product if product is correctly formated" in {
       val stubWriteService = stub[WriteService]
       (stubWriteService.addProduct _)
-        .when("foo", 45.6) returns (Future { Product(0, "foo", 45.6) })
+        .when ("foo", 45.6) returns Future(Product(0, "foo", 45.6))
       val app = fakeApplication(stubWriteService)
 
       val json = Json.obj("label" -> "foo", "price" -> 45.6)
@@ -103,10 +103,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
     }
 
     "return BAD_REQUEST for POST /product if product is incorrectly formated" in {
-      val stubWriteService = stub[WriteService]
-      (stubWriteService.addProduct _)
-        .when(*, *) returns (Future { Product(-1, "", -1) })
-      val app = fakeApplication(stubWriteService)
+      val app = fakeApplication
 
       val json = JsString("not a product")
       val request = FakeRequest(POST, "/product", Headers(), json)
@@ -124,7 +121,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
     "return OK for DELETE /product/:id if product exists" in {
       val stubWriteService = stub[WriteService]
       (stubWriteService.deleteProduct _)
-        .when(42) returns(Future { Some(Product(0, "", 0)) })
+        .when (42) returns Future(Some(Product(0, "", 0)))
       val app = fakeApplication(stubWriteService)
 
       val result = route(app, FakeRequest(DELETE, "/product/42")).get
@@ -140,7 +137,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
 
     "return BAD_REQUEST for DELETE /product/:id if product doesn't exist" in {
       val stubWriteService = stub[WriteService]
-      (stubWriteService.deleteProduct _) when(21) returns(Future { None })
+      stubWriteService.deleteProduct _ when (21) returns Future(None)
       val app = fakeApplication(stubWriteService)
 
       val result = route(app, FakeRequest(DELETE, "/product/21")).get
@@ -157,7 +154,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
     "return OK for PUT /product/:id/label if label is correctly formated and product exists" in {
       val stubWriteService = stub[WriteService]
       (stubWriteService.updateLabel _)
-        .when(7, "foo") returns(Future { Some(Product(7, "foo", 7.89)) })
+        .when (7, "foo") returns Future(Some(Product(7, "foo", 7.89)))
       val app = fakeApplication(stubWriteService)
 
       val json = Json.obj("label" -> "foo")
@@ -175,7 +172,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
 
     "return BAD_REQUEST for PUT /product/:id/label if label is correctly formated and product doesn't exist" in {
       val stubWriteService = stub[WriteService]
-      (stubWriteService.updateLabel _) when(7, "foo") returns(Future { None })
+      stubWriteService.updateLabel _ when (7, "foo") returns Future(None)
       val app = fakeApplication(stubWriteService)
 
       val json = Json.obj("label" -> "foo")
@@ -206,7 +203,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
     "return OK for PUT /product/:id/price if price is correctly formated and product exists" in {
       val stubWriteService = stub[WriteService]
       (stubWriteService.updatePrice _)
-        .when(3, 1.23) returns(Future { Some(Product(3, "", 1.23)) })
+        .when (3, 1.23) returns Future(Some(Product(3, "", 1.23)))
       val app = fakeApplication(stubWriteService)
 
       val json = Json.obj("price" -> 1.23)
@@ -224,7 +221,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
 
     "return BAD_REQUEST for PUT /product/:id/price if price is correctly formated and product doesn't exist" in {
       val stubWriteService = stub[WriteService]
-      (stubWriteService.updatePrice _) when(5, 45.6) returns(Future { None })
+      stubWriteService.updatePrice _ when (5, 45.6) returns Future(None)
       val app = fakeApplication(stubWriteService)
 
       val json = Json.obj("price" -> 45.6)
@@ -249,5 +246,4 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
     }
 
   }
-
 }
