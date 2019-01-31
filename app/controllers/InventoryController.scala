@@ -49,15 +49,15 @@ class InventoryController @Inject()(
       label <- (request.body \ "label").validate[String].asOpt
       price <- (request.body \ "price").validate[Double].asOpt
     } yield writeService.addProduct(label, price))
-      .map(_.map(id => Ok(Json.obj("id" -> id))))
-      .getOrElse(Future { BadRequest("Invalid Product.") })
+      .map(_.map(product => Created(Json.toJson(product))))
+      .getOrElse(Future { BadRequest("Invalid product") })
   }
 
   def deleteProduct(id: Int) = Action.async {
     writeService.deleteProduct(id)
       .map(_
         .map(product => Ok(Json.toJson(product)))
-        .getOrElse(BadRequest(s"Product with id: $id")))
+        .getOrElse(BadRequest(s"No product with id: $id")))
   }
 
   def updateLabel(id: Int) = Action.async(parse.json) { request =>
@@ -67,7 +67,7 @@ class InventoryController @Inject()(
           .updateLabel(id, label)
           .map(_
             .map(product => Ok(Json.toJson(product)))
-            .getOrElse(BadRequest(s"No Product with id: $id"))))
+            .getOrElse(BadRequest(s"No product with id: $id"))))
       .getOrElse(Future { BadRequest("Invalid label") })
   }
 
@@ -78,7 +78,7 @@ class InventoryController @Inject()(
           .updatePrice(id, price)
           .map(_
             .map(product => Ok(Json.toJson(product)))
-            .getOrElse(BadRequest(s"No Product with id: $id"))))
+            .getOrElse(BadRequest(s"No product with id: $id"))))
       .getOrElse(Future { BadRequest("Invalid price") })
   }
 }
