@@ -1,4 +1,4 @@
-# My Play Project
+# Scala Play CQRS example
 
 Scala Play training exercice with CQRS architecture.
 
@@ -9,15 +9,6 @@ Scala Play training exercice with CQRS architecture.
 
 
 ## Routes
-
-### `app/controllers/HomeController.scala`
-
-*Not very interesting:*
-
-* GET `/`: default home
-* GET `/hello?name=toto`: `"Hello toto!"`
-* GET `/:lang/index`: `"lang = $lang"`
-
 
 ### `app/controllers/InventoryController.scala`
 
