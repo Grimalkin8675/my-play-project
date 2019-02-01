@@ -11,8 +11,7 @@ import models._
 
 
 class EventsServiceSpec extends PlaySpec with MockFactory {
-  def result[A](future: Future[A]): A =
-    Await.result(future, 1 second)
+  def result[A](future: Future[A]): A = Await.result(future, 1 second)
 
   "EventsService.nextId" should {
 
