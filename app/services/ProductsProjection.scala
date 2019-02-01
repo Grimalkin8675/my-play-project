@@ -29,7 +29,28 @@ class ProductsProjection @Inject()(
     inventory.find(_.label == label)
   }
 
-  private def update(
+  def handleEvent(event: ProductEvent): Unit =
+    inventory = event match {
+      case ProductAdded(product) => inventory :+ product
+      case ProductDeleted(id) => ProductsProjection.delete(inventory, id)
+      case ProductLabelUpdated(id, label) =>
+        ProductsProjection.update(inventory, id, _.copy(label=label))
+      case ProductPriceUpdated(id, price) =>
+        ProductsProjection.update(inventory, id, _.copy(price=price))
+    }
+}
+
+object ProductsProjection {
+  def delete(products: List[Product], id: Int): List[Product] = {
+    val i = products.indexWhere(_.id == id)
+    if (i == -1) products
+    else {
+      val (before, after) = products.splitAt(i)
+      before ::: after.tail
+    }
+  }
+
+  def update(
     products: List[Product],
     id: Int,
     f: Product => Product): List[Product] = {
@@ -46,16 +67,5 @@ class ProductsProjection @Inject()(
     }
 
     updateRec(List.empty[Product], products)
-  }
-
-  def handleEvent(event: ProductEvent): Unit = {
-    inventory = event match {
-      case ProductAdded(product) => inventory :+ product
-      case ProductDeleted(id) => inventory.filter(_.id != id)
-      case ProductLabelUpdated(id, label) =>
-        update(inventory, id, _.copy(label=label))
-      case ProductPriceUpdated(id, price) =>
-        update(inventory, id, _.copy(price=price))
-    }
   }
 }
