@@ -190,7 +190,7 @@ class EventsServiceSpec extends PlaySpec with MockFactory {
 
   }
 
-  "EventsService.handleCommand(Some(id), UpdateProductPrice(label))" should {
+  "EventsService.handleCommand(Some(id), UpdateProductPrice(price))" should {
 
     "add ProductPriceUpdated event to events list and return updated Some(Product) if it exists" in {
       val stubQueryHandler = stub[QueryHandler]
@@ -251,5 +251,19 @@ class EventsServiceSpec extends PlaySpec with MockFactory {
       updatedProduct mustBe None
     }
 
+  }
+
+  "EventsService.handleCommand" should {
+    "return None for all other id/command combinations" in {
+      val eventsService =
+        new EventsService(stub[QueryHandler], stub[Publishable])
+
+      List(
+        eventsService.handleCommand(Some(0), AddProduct("foo", 123)),
+        eventsService.handleCommand(None, DeleteProduct),
+        eventsService.handleCommand(None, UpdateProductLabel("bar")),
+        eventsService.handleCommand(None, UpdateProductPrice(456)))
+      .foreach(result(_) mustBe None)
+    }
   }
 }

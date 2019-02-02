@@ -69,6 +69,6 @@ class EventsService @Inject()(
       updateById(id, ProductLabelUpdated(id, label))
     case (Some(id), UpdateProductPrice(price)) =>
       updateById(id, ProductPriceUpdated(id, price))
-    case _ => ???
+    case _ => Future(None)
   }
 }
