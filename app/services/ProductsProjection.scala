@@ -23,11 +23,10 @@ class ProductsProjection @Inject()(
 
   var inventory: List[Product] = List.empty[Product]
 
-  def products: Future[List[Product]] = Future { inventory }
+  def products: Future[List[Product]] = Future(inventory)
 
-  def productByLabel(label: String): Future[Option[Product]] = Future {
-    inventory.find(_.label == label)
-  }
+  def productByLabel(label: String): Future[Option[Product]] =
+    Future(inventory.find(_.label == label))
 
   def handleEvent(event: ProductEvent): Unit =
     inventory = event match {
