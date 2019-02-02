@@ -5,7 +5,7 @@ import scala.concurrent._
 import scala.util._
 
 import models._
-import controllers.{WriteService, QueryHandler}
+import controllers.{CommandHandler, QueryHandler}
 
 
 trait Publishable {
@@ -17,7 +17,7 @@ class EventsService @Inject()(
   eventBus: Publishable
 )(
   implicit ec: ExecutionContext
-) extends WriteService {
+) extends CommandHandler {
 
   var events: List[ProductEvent] = List.empty[ProductEvent]
 
@@ -35,21 +35,23 @@ class EventsService @Inject()(
       .map(_.id + 1)
       .getOrElse(0))
 
-  def addProduct(label: String, price: Double): Future[Product] =
+  private def addProduct(
+    label: String,
+    price: Double): Future[Option[Product]] =
     nextId.flatMap { newId =>
       val newProduct = Product(newId, label, price)
       addEvent(ProductAdded(newProduct))
-        .map(_ => newProduct)
+        .map(_ => Some(newProduct))
     }
 
-  def deleteProduct(id: Int): Future[Option[Product]] =
+  private def deleteProduct(id: Int): Future[Option[Product]] =
     productById(id).flatMap(_
       .map(product =>
         addEvent(ProductDeleted(id))
           .map(_ => Some(product)))
       .getOrElse(Future(None)))
 
-  def updateById(
+  private def updateById(
     id: Int,
     event: ProductEvent): Future[Option[Product]] =
     productById(id).flatMap(_
@@ -58,9 +60,15 @@ class EventsService @Inject()(
           .flatMap(_ => productById(id)))
       .getOrElse(Future(None)))
 
-  def updateLabel(id: Int, label: String): Future[Option[Product]] =
-    updateById(id, ProductLabelUpdated(id, label))
-
-  def updatePrice(id: Int, price: Double): Future[Option[Product]] =
-    updateById(id, ProductPriceUpdated(id, price))
+  def handleCommand[Command <: ProductCommand](
+    maybeId: Option[Int],
+    command: Command): Future[Option[Product]] = (maybeId, command) match {
+    case (None, AddProduct(label, price)) => addProduct(label, price)
+    case (Some(id), DeleteProduct) => deleteProduct(id)
+    case (Some(id), UpdateProductLabel(label)) =>
+      updateById(id, ProductLabelUpdated(id, label))
+    case (Some(id), UpdateProductPrice(price)) =>
+      updateById(id, ProductPriceUpdated(id, price))
+    case _ => ???
+  }
 }

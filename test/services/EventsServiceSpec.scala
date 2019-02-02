@@ -5,7 +5,7 @@ import scala.concurrent._
 import ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-import controllers.{WriteService, QueryHandler}
+import controllers.QueryHandler
 import services.{EventsService, Publishable}
 import models._
 
@@ -17,7 +17,8 @@ class EventsServiceSpec extends PlaySpec with MockFactory {
 
     "return 0 if queryHandler.products list is empty" in {
       val stubQueryHandler = stub[QueryHandler]
-      stubQueryHandler.products _ when() returns Future(List.empty) once
+      (stubQueryHandler.products _)
+        .when () returns Future(List.empty) once
 
       val stubPublishable = stub[Publishable]
 
@@ -28,9 +29,10 @@ class EventsServiceSpec extends PlaySpec with MockFactory {
 
     "return last product of queryHandler.products' id + 1" in {
       val stubQueryHandler = stub[QueryHandler]
-      stubQueryHandler.products _ when() returns Future(List(
-        Product(2, "", 0),
-        Product(4, "", 0))) once
+      (stubQueryHandler.products _)
+        .when ()
+        .returns(Future(List(Product(2, "", 0), Product(4, "", 0))))
+        .once
 
       val stubPublishable = stub[Publishable]
 
@@ -41,25 +43,28 @@ class EventsServiceSpec extends PlaySpec with MockFactory {
 
   }
 
-  "EventsService.addProduct(label, price)" should {
+  "EventsService.handleCommand(None, AddProduct(label, price))" should {
 
     "add ProductAdded event to the events list and return new added Product" in {
       val stubQueryHandler = stub[QueryHandler]
-      stubQueryHandler.products _ when() returns Future(List.empty) once
+      (stubQueryHandler.products _)
+        .when () returns Future(List.empty) once
 
       val stubPublishable = stub[Publishable]
-      var publishedEvents = List.empty[ProductEvent]
+      var publishedEvent: Option[ProductEvent] = None
       (stubPublishable.publish _)
-        .when(*) onCall((event: ProductEvent) => publishedEvents :+= event) once
+        .when (*)
+        .onCall((event: ProductEvent) => publishedEvent = Some(event)) once
 
       val eventsService = new EventsService(stubQueryHandler, stubPublishable)
 
       eventsService.events mustBe List.empty
 
-      val addedProduct = result(eventsService.addProduct("foo", 42))
+      val addedProduct = result(
+        eventsService.handleCommand(None, AddProduct("foo", 42))).get
 
       eventsService.events mustBe List(ProductAdded(addedProduct))
-      publishedEvents mustBe List(ProductAdded(addedProduct))
+      publishedEvent mustBe Some(ProductAdded(addedProduct))
 
       addedProduct.label mustBe "foo"
       addedProduct.price mustBe 42
@@ -67,100 +72,181 @@ class EventsServiceSpec extends PlaySpec with MockFactory {
 
   }
 
-  "EventsService.deleteProduct(id)" should {
+  "EventsService.handleCommand(Some(id), DeleteProduct)" should {
 
     "add ProductDeleted event to the events list and return deleted Some(Product) if it exists" in {
       val stubQueryHandler = stub[QueryHandler]
-      stubQueryHandler.products _ when() returns Future(List(
-        Product(3, "bar", 789),
-        Product(6, "foo", 123))) once
+      (stubQueryHandler.products _)
+        .when ()
+        .returns(
+          Future(List(Product(3, "bar", 789), Product(6, "foo", 123))))
+        .once
 
       val stubPublishable = stub[Publishable]
-      var publishedEvents = List.empty[ProductEvent]
+      var publishedEvent: Option[ProductEvent] = None
       (stubPublishable.publish _)
-        .when(*) onCall((event: ProductEvent) => publishedEvents :+= event) once
+        .when (*)
+        .onCall((event: ProductEvent) => publishedEvent = Some(event)) once
 
       val eventsService = new EventsService(stubQueryHandler, stubPublishable)
 
-      val deletedProduct = result(eventsService.deleteProduct(6))
+      val deletedProduct = result(
+        eventsService.handleCommand(Some(6), DeleteProduct))
 
       eventsService.events mustBe List(ProductDeleted(6))
-      publishedEvents mustBe List(ProductDeleted(6))
+      publishedEvent mustBe Some(ProductDeleted(6))
 
       deletedProduct mustBe Some(Product(6, "foo", 123))
     }
 
     "not change events list and return None if it doesn't exist" in {
       val stubQueryHandler = stub[QueryHandler]
-      stubQueryHandler.products _ when() returns Future(List(
-        Product(3, "bar", 789),
-        Product(6, "foo", 123))) once
+      (stubQueryHandler.products _)
+        .when ()
+        .returns(
+          Future(List(Product(3, "bar", 789), Product(6, "foo", 123))))
+        .once
 
       val stubPublishable = stub[Publishable]
-      var publishedEvents = List.empty[ProductEvent]
+      var publishedEvent: Option[ProductEvent] = None
       (stubPublishable.publish _)
-        .when(*) onCall((event: ProductEvent) => publishedEvents :+= event) never
+        .when (*)
+        .onCall((event: ProductEvent) => publishedEvent = Some(event))
+        .never
 
       val eventsService = new EventsService(stubQueryHandler, stubPublishable)
 
-      val deletedProduct = result(eventsService.deleteProduct(8))
+      val deletedProduct = result(
+        eventsService.handleCommand(Some(8), DeleteProduct))
 
       eventsService.events mustBe List.empty
-      publishedEvents mustBe List.empty
+      publishedEvent mustBe None
 
       deletedProduct mustBe None
     }
 
   }
 
-  "EventsService.updateById(id, event)" should {
+  "EventsService.handleCommand(Some(id), UpdateProductLabel(label))" should {
 
-    "add event to events list and return updated Some(Product) if it exists" in {
+    "add ProductLabelUpdated event to events list and return updated Some(Product) if it exists" in {
       val stubQueryHandler = stub[QueryHandler]
       inSequence {
-        stubQueryHandler.products _ when() returns Future(List(
-          Product(3, "bar", 789),
-          Product(6, "foo", 123))) once()
-        stubQueryHandler.products _ when() returns Future(List(
-          Product(3, "bar", 789),
-          Product(6, "baz", 123))) once()
+        (stubQueryHandler.products _)
+          .when ()
+          .returns(
+            Future(List(Product(3, "bar", 789), Product(6, "foo", 123))))
+          .once
+        (stubQueryHandler.products _)
+          .when ()
+          .returns(
+            Future(List(Product(3, "bar", 789), Product(6, "baz", 123))))
+          .once
       }
 
       val stubPublishable = stub[Publishable]
-      var publishedEvents = List.empty[ProductEvent]
+      var publishedEvent: Option[ProductEvent] = None
       (stubPublishable.publish _)
-        .when(*) onCall((event: ProductEvent) => publishedEvents :+= event) once
+        .when (*)
+        .onCall((event: ProductEvent) => publishedEvent = Some(event))
+        .once
 
       val eventsService = new EventsService(stubQueryHandler, stubPublishable)
 
-      val event = ProductLabelUpdated(-12, "baz")
-      val updatedProduct = result(eventsService.updateById(6, event))
+      val updatedProduct = result(
+        eventsService.handleCommand(Some(6), UpdateProductLabel("baz")))
 
-      eventsService.events mustBe List(event)
-      publishedEvents mustBe List(event)
+      eventsService.events mustBe List(ProductLabelUpdated(6, "baz"))
+      publishedEvent mustBe Some(ProductLabelUpdated(6, "baz"))
 
       updatedProduct mustBe Some(Product(6, "baz", 123))
     }
 
     "not change events list and return None if it doesn't exist" in {
       val stubQueryHandler = stub[QueryHandler]
-      stubQueryHandler.products _ when() returns Future(List(
-        Product(3, "bar", 789),
-        Product(6, "foo", 123))) once
+      (stubQueryHandler.products _)
+        .when ()
+        .returns(
+          Future(List(Product(3, "bar", 789), Product(6, "foo", 123))))
+        .once
 
       val stubPublishable = stub[Publishable]
-      var publishedEvents = List.empty[ProductEvent]
+      var publishedEvent: Option[ProductEvent] = None
       (stubPublishable.publish _)
-        .when(*) onCall((event: ProductEvent) => publishedEvents :+= event) never
-
-      val stubEvent = stub[ProductPriceUpdated]
+        .when (*)
+        .onCall((event: ProductEvent) => publishedEvent = Some(event))
+        .never
 
       val eventsService = new EventsService(stubQueryHandler, stubPublishable)
 
-      val updatedProduct = result(eventsService.updateById(8, stubEvent))
+      val updatedProduct = result(
+        eventsService.handleCommand(Some(8), UpdateProductLabel("baz")))
 
       eventsService.events mustBe List.empty
-      publishedEvents mustBe List.empty
+      publishedEvent mustBe None
+
+      updatedProduct mustBe None
+    }
+
+  }
+
+  "EventsService.handleCommand(Some(id), UpdateProductPrice(label))" should {
+
+    "add ProductPriceUpdated event to events list and return updated Some(Product) if it exists" in {
+      val stubQueryHandler = stub[QueryHandler]
+      inSequence {
+        (stubQueryHandler.products _)
+          .when ()
+          .returns(
+            Future(List(Product(3, "bar", 789), Product(6, "foo", 123))))
+          .once
+        (stubQueryHandler.products _)
+          .when ()
+          .returns(
+            Future(List(Product(3, "bar", 789), Product(6, "foo", 456))))
+          .once
+      }
+
+      val stubPublishable = stub[Publishable]
+      var publishedEvent: Option[ProductEvent] = None
+      (stubPublishable.publish _)
+        .when (*)
+        .onCall((event: ProductEvent) => publishedEvent = Some(event))
+        .once
+
+      val eventsService = new EventsService(stubQueryHandler, stubPublishable)
+
+      val updatedProduct = result(
+        eventsService.handleCommand(Some(6), UpdateProductPrice(456)))
+
+      eventsService.events mustBe List(ProductPriceUpdated(6, 456))
+      publishedEvent mustBe Some(ProductPriceUpdated(6, 456))
+
+      updatedProduct mustBe Some(Product(6, "foo", 456))
+    }
+
+    "not change events list and return None if it doesn't exist" in {
+      val stubQueryHandler = stub[QueryHandler]
+      (stubQueryHandler.products _)
+        .when ()
+        .returns(
+          Future(List(Product(3, "bar", 789), Product(6, "foo", 123))))
+        .once
+
+      val stubPublishable = stub[Publishable]
+      var publishedEvent: Option[ProductEvent] = None
+      (stubPublishable.publish _)
+        .when (*)
+        .onCall((event: ProductEvent) => publishedEvent = Some(event))
+        .never
+
+      val eventsService = new EventsService(stubQueryHandler, stubPublishable)
+
+      val updatedProduct = result(
+        eventsService.handleCommand(Some(8), UpdateProductPrice(456)))
+
+      eventsService.events mustBe List.empty
+      publishedEvent mustBe None
 
       updatedProduct mustBe None
     }
