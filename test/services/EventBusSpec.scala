@@ -31,12 +31,16 @@ class EventBusSpec extends PlaySpec with MockFactory {
       var handledEvents1 = List.empty[ProductEvent]
       val stubSubscriber1 = stub[EventHandler]
       (stubSubscriber1.handleEvent _)
-        .when(*) onCall((event: ProductEvent) => handledEvents1 :+= event) twice
+        .when (*)
+        .onCall((event: ProductEvent) => handledEvents1 :+= event)
+        .twice
 
       var handledEvents2 = List.empty[ProductEvent]
       val stubSubscriber2 = stub[EventHandler]
       (stubSubscriber2.handleEvent _)
-        .when(*) onCall((event: ProductEvent) => handledEvents2 :+= event) twice
+        .when (*)
+        .onCall((event: ProductEvent) => handledEvents2 :+= event)
+        .twice
 
       val eventBus = new EventBus()
       eventBus.subscribe(stubSubscriber1)
