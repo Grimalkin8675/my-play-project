@@ -6,6 +6,7 @@ import ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 import services.{ProductsCountProjection, Subscribable}
+import models._
 
 
 class ProductsCountProjectionSpec extends PlaySpec with MockFactory {
@@ -28,6 +29,26 @@ class ProductsCountProjectionSpec extends PlaySpec with MockFactory {
       val service = new ProductsCountProjection(stubEventBus)
 
       subscribeCalled mustBe true
+    }
+
+  }
+
+  "ProductsProjection.handleEvent(event)" should {
+
+    "increment counter on ProductAdded event" in {
+      val service = new ProductsCountProjection(stub[Subscribable])
+      service.counter = 10
+      service.handleEvent(ProductAdded(Product(1, "foo", 789)))
+
+      service.counter mustBe 11
+    }
+
+    "decrement counter on ProductDeleted event" in {
+      val service = new ProductsCountProjection(stub[Subscribable])
+      service.counter = 6
+      service.handleEvent(ProductDeleted(23))
+
+      service.counter mustBe 5
     }
 
   }

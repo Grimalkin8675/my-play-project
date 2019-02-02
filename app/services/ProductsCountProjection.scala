@@ -17,5 +17,9 @@ class ProductsCountProjection @Inject()(
 
   var counter = 0
 
-  def handleEvent(event: ProductEvent): Unit = ???
+  def handleEvent(event: ProductEvent): Unit = event match {
+    case ProductAdded(_) => counter += 1
+    case ProductDeleted(_) => counter -= 1
+    case _ => Unit
+  }
 }
