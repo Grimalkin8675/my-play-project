@@ -6,7 +6,6 @@ import play.api.libs.json._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.Application
-import play.api.mvc.Headers
 
 import scala.reflect.ClassTag
 
@@ -90,7 +89,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       val app = fakeApplication(stubCommandHandler)
 
       val json = Json.obj("label" -> "foo", "price" -> 45.6)
-      val request = FakeRequest(POST, "/product", Headers(), json)
+      val request = FakeRequest(POST, "/product").withJsonBody(json)
       val result = route(app, request).get
 
       status(result) mustBe CREATED
@@ -106,7 +105,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       val app = fakeApplication
 
       val json = JsString("not a product")
-      val request = FakeRequest(POST, "/product", Headers(), json)
+      val request = FakeRequest(POST, "/product").withJsonBody(json)
       val result = route(app, request).get
 
       status(result) mustBe BAD_REQUEST
@@ -160,7 +159,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       val app = fakeApplication(stubCommandHandler)
 
       val json = Json.obj("label" -> "foo")
-      val request = FakeRequest(PUT, "/product/7/label", Headers(), json)
+      val request = FakeRequest(PUT, "/product/7/label").withJsonBody(json)
       val result = route(app, request).get
 
       status(result) mustBe OK
@@ -179,7 +178,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       val app = fakeApplication(stubCommandHandler)
 
       val json = Json.obj("label" -> "foo")
-      val request = FakeRequest(PUT, "/product/7/label", Headers(), json)
+      val request = FakeRequest(PUT, "/product/7/label").withJsonBody(json)
       val result = route(app, request).get
 
       status(result) mustBe BAD_REQUEST
@@ -191,7 +190,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       val app = fakeApplication
 
       val json = Json.obj("label" -> 12)
-      val request = FakeRequest(PUT, "/product/0/label", Headers(), json)
+      val request = FakeRequest(PUT, "/product/0/label").withJsonBody(json)
       val result = route(app, request).get
 
       status(result) mustBe BAD_REQUEST
@@ -211,7 +210,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       val app = fakeApplication(stubCommandHandler)
 
       val json = Json.obj("price" -> 1.23)
-      val request = FakeRequest(PUT, "/product/3/price", Headers(), json)
+      val request = FakeRequest(PUT, "/product/3/price").withJsonBody(json)
       val result = route(app, request).get
 
       status(result) mustBe OK
@@ -230,7 +229,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       val app = fakeApplication(stubCommandHandler)
 
       val json = Json.obj("price" -> 45.6)
-      val request = FakeRequest(PUT, "/product/5/price", Headers(), json)
+      val request = FakeRequest(PUT, "/product/5/price").withJsonBody(json)
       val result = route(app, request).get
 
       status(result) mustBe BAD_REQUEST
@@ -242,7 +241,7 @@ class InventoryControllerSpec extends PlaySpec with MockFactory {
       val app = fakeApplication
 
       val json = Json.obj("price" -> "foo")
-      val request = FakeRequest(PUT, "/product/0/price", Headers(), json)
+      val request = FakeRequest(PUT, "/product/0/price").withJsonBody(json)
       val result = route(app, request).get
 
       status(result) mustBe BAD_REQUEST
